@@ -1,30 +1,50 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { Search } from "lucide-react";
+import { Search, Paw, Heart } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
-const CatBreed = ({ name, description }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 50 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.5 }}
-  >
-    <Card className="mb-4 hover:shadow-lg transition-shadow duration-300">
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold">{name}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <CardDescription className="text-lg">{description}</CardDescription>
-      </CardContent>
-    </Card>
-  </motion.div>
-);
+const CatBreed = ({ name, description, index }) => {
+  const { toast } = useToast();
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: index * 0.1 }}
+    >
+      <Card className="mb-4 hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold flex items-center">
+            <Paw className="mr-2 h-6 w-6 text-purple-600" />
+            {name}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <CardDescription className="text-lg">{description}</CardDescription>
+          <Button 
+            variant="outline" 
+            className="mt-4"
+            onClick={() => toast({
+              title: "Liked!",
+              description: `You've added ${name} to your favorites!`,
+            })}
+          >
+            <Heart className="mr-2 h-4 w-4" />
+            Like
+          </Button>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+};
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [catFact, setCatFact] = useState("");
   const catBreeds = [
     { name: "Siamese", description: "Known for their distinctive color points and blue eyes." },
     { name: "Maine Coon", description: "One of the largest domesticated cat breeds with a distinctive physical appearance." },
@@ -43,6 +63,12 @@ const Index = () => {
     "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Kittyply_edit1.jpg/1200px-Kittyply_edit1.jpg",
   ];
 
+  useEffect(() => {
+    fetch('https://catfact.ninja/fact')
+      .then(response => response.json())
+      .then(data => setCatFact(data.fact));
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-100 to-pink-100 p-8">
       <div className="max-w-4xl mx-auto">
@@ -59,10 +85,12 @@ const Index = () => {
           <CarouselContent>
             {catImages.map((src, index) => (
               <CarouselItem key={index}>
-                <img
+                <motion.img
                   src={src}
                   alt={`Cat ${index + 1}`}
                   className="mx-auto object-cover w-full h-[400px] rounded-lg"
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.3 }}
                 />
               </CarouselItem>
             ))}
@@ -71,10 +99,20 @@ const Index = () => {
           <CarouselNext />
         </Carousel>
 
-        <motion.p
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
+          className="bg-white p-6 rounded-lg shadow-md mb-8"
+        >
+          <h2 className="text-2xl font-semibold mb-2 text-purple-800">Did You Know?</h2>
+          <p className="text-lg text-gray-700">{catFact}</p>
+        </motion.div>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
           className="text-xl text-gray-700 mb-8"
         >
           Cats are fascinating creatures that have been domesticated for thousands of years. They are known for their
@@ -85,7 +123,7 @@ const Index = () => {
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
+          transition={{ delay: 0.6, duration: 0.5 }}
           className="mb-8"
         >
           <h2 className="text-3xl font-semibold mb-4 text-purple-800">Explore Cat Breeds</h2>
@@ -104,9 +142,11 @@ const Index = () => {
           </div>
         </motion.div>
 
-        {filteredBreeds.map((breed, index) => (
-          <CatBreed key={index} name={breed.name} description={breed.description} />
-        ))}
+        <AnimatePresence>
+          {filteredBreeds.map((breed, index) => (
+            <CatBreed key={breed.name} name={breed.name} description={breed.description} index={index} />
+          ))}
+        </AnimatePresence>
       </div>
     </div>
   );
